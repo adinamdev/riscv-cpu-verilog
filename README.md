@@ -70,13 +70,14 @@ The processor is organized as a modular single-cycle datapath:
 - 256 × 32-bit data memory
 - Synthesizable RTL targeting the Intel DE10-Lite FPGA
 - Simulation and verification using Questa
+- Successful full FPGA compilation in Intel Quartus Prime
 
 ## Implemented Instructions
 
 The current control logic implements the following instruction subset:
 
 | Type | Instructions |
-|------|--------------|
+| --- | --- |
 | R-Type | ADD, SUB, AND, OR, XOR, SLT, SLL, SRL |
 | I-Type | ADDI, ANDI, ORI, XORI, SLTI, SLLI, SRLI |
 | Memory | LW, SW |
@@ -87,7 +88,7 @@ The ALU implements signed comparison for SLT/SLTI and uses the lower five bits o
 ## RTL Modules
 
 | Module | Function |
-|--------|----------|
+| --- | --- |
 | `riscv_cpu.v` | Top-level datapath and module integration |
 | `program_counter.v` | Stores and updates the current program counter |
 | `instruction_memory.v` | Stores the program executed by the processor |
@@ -104,7 +105,7 @@ The integrated processor was simulated with a test program that exercises arithm
 
 ### Test Program
 
-```assembly
+```text
 addi x1, x0, 5
 addi x2, x0, 3
 add  x3, x1, x2
@@ -151,6 +152,25 @@ Correct Branch Target Execution
 
 ![RISC-V CPU simulation results](riscv_cpu_simulation_results.png)
 
+## FPGA Synthesis Utilization Results
+
+The processor was successfully synthesized and compiled for the Intel MAX 10 FPGA on the DE10-Lite platform using Intel Quartus Prime.
+
+| Resource | Utilization |
+| --- | ---: |
+| Logic Elements | 10,745 / 49,760 (22%) |
+| Registers | 8,740 |
+| I/O Pins | 23 / 360 (6%) |
+| Memory Bits | 0 / 1,677,312 (0%) |
+| 9-bit Multiplier Elements | 0 / 288 (0%) |
+| PLLs | 0 / 4 (0%) |
+
+**Target Device:** Intel MAX 10 `10M50DAF484C6GES`
+
+The design completed full Quartus compilation successfully with **0 errors**.
+
+![Quartus FPGA synthesis utilization results](riscv_cpu_quartus_utilization.png)
+
 ## FPGA Development
 
 The design was developed using:
@@ -165,7 +185,7 @@ Quartus is used for RTL synthesis and FPGA implementation, while Questa is used 
 ## Repository Structure
 
 ```text
-riscv-pipelined-cpu/
+riscv-cpu-verilog/
 ├── alu.v
 ├── alu_tb.v
 ├── control_unit.v
@@ -184,6 +204,7 @@ riscv-pipelined-cpu/
 ├── riscv_cpu.qsf
 ├── riscv_cpu.sdc
 ├── riscv_cpu_simulation_results.png
+├── riscv_cpu_quartus_utilization.png
 └── README.md
 ```
 
@@ -201,6 +222,6 @@ Potential extensions include:
 
 ## What I Learned
 
-This project provided hands-on experience with processor datapath design, instruction decoding, RTL modularization, register-file architecture, ALU design, memory interfaces, control-flow implementation, FPGA synthesis, and hardware verification.
+This project provided hands-on experience with processor datapath design, instruction decoding, RTL modularization, register-file architecture, ALU design, memory interfaces, control-flow implementation, FPGA synthesis, resource-utilization analysis, and hardware verification.
 
 It also strengthened my understanding of how software-visible RISC-V instructions are translated into control signals and data movement through a hardware processor architecture.
