@@ -1,57 +1,206 @@
-# 5-Stage Pipelined RISC-V CPU
+# 32-bit RISC-V CPU in Verilog
 
-A synthesizable 32-bit RISC-V processor implemented in Verilog and targeted for FPGA deployment. This project explores processor microarchitecture, pipelined execution, RTL design, functional verification, and FPGA synthesis using Intel Quartus Prime and Questa.
+A synthesizable 32-bit RISC-V processor implemented in Verilog and developed for FPGA deployment on the Intel DE10-Lite platform. The design uses a modular single-cycle datapath with instruction decode, register-file access, immediate generation, ALU execution, data memory access, writeback, and conditional branch control.
 
-## Overview
-
-The processor implements a classic five-stage pipeline:
-
-1. **Instruction Fetch (IF)** — Fetches instructions from instruction memory using the program counter.
-2. **Instruction Decode (ID)** — Decodes instructions, reads source registers, and generates immediate values and control signals.
-3. **Execute (EX)** — Performs arithmetic and logical operations through the ALU.
-4. **Memory Access (MEM)** — Interfaces with data memory for load/store operations.
-5. **Write Back (WB)** — Writes computation or memory results back to the register file.
-
-The design was developed modularly in Verilog, verified using dedicated testbenches, and synthesized using Intel Quartus Prime for FPGA implementation.
+The processor was developed using Intel Quartus Prime and verified through module-level and integrated simulation using Questa.
 
 ## Architecture
 
+The processor is organized as a modular single-cycle datapath:
+
 ```text
-             ┌───────────┐
-             │    PC     │
-             └─────┬─────┘
-                   │
-                   ▼
-        ┌─────────────────────┐
-        │  Instruction Memory │
-        └──────────┬──────────┘
-                   │
-              IF / ID
-                   │
-                   ▼
-        ┌─────────────────────┐
-        │    Control Unit     │
-        │    Register File    │
-        │ Immediate Generator │
-        └──────────┬──────────┘
-                   │
-              ID / EX
-                   │
-                   ▼
-             ┌───────────┐
-             │    ALU    │
-             └─────┬─────┘
-                   │
-              EX / MEM
-                   │
-                   ▼
-            ┌─────────────┐
-            │ Data Memory │
-            └──────┬──────┘
-                   │
-              MEM / WB
-                   │
-                   ▼
-            ┌─────────────┐
-            │ Write Back  │
-            └─────────────┘
+              +--------------------+
+              |  Program Counter   |
+              +---------+----------+
+                        |
+                        v
+              +--------------------+
+              | Instruction Memory |
+              +---------+----------+
+                        |
+                        v
+        +---------------+----------------+
+        |                                |
+        v                                v
++---------------+                +--------------------+
+| Control Unit  |                | Immediate Generator|
++-------+-------+                +---------+----------+
+        |                                  |
+        v                                  |
++--------------------+                     |
+|   Register File    |                     |
+|  32 x 32-bit regs  |                     |
++---------+----------+                     |
+          |                                |
+          +---------------+----------------+
+                          |
+                          v
+                    +-----------+
+                    |    ALU    |
+                    +-----+-----+
+                          |
+                +---------+---------+
+                |                   |
+                v                   v
+        +---------------+      Branch Logic
+        |  Data Memory  |           |
+        +-------+-------+           |
+                |                   |
+                v                   |
+        +---------------+           |
+        |   Writeback   |           |
+        +-------+-------+           |
+                |                   |
+                +----> Register File|
+                                    |
+                                    v
+                              Program Counter
+```
+
+## Features
+
+- 32-bit RISC-V datapath
+- Modular Verilog RTL design
+- 32 × 32-bit register file with x0 hardwired to zero
+- Arithmetic, logical, comparison, and shift operations
+- Immediate generation for I-, S-, B-, U-, and J-type instruction formats
+- Load/store data-memory interface
+- Conditional branch control using BEQ
+- 256 × 32-bit instruction memory
+- 256 × 32-bit data memory
+- Synthesizable RTL targeting the Intel DE10-Lite FPGA
+- Simulation and verification using Questa
+
+## Implemented Instructions
+
+The current control logic implements the following instruction subset:
+
+| Type | Instructions |
+|------|--------------|
+| R-Type | ADD, SUB, AND, OR, XOR, SLT, SLL, SRL |
+| I-Type | ADDI, ANDI, ORI, XORI, SLTI, SLLI, SRLI |
+| Memory | LW, SW |
+| Branch | BEQ |
+
+The ALU implements signed comparison for SLT/SLTI and uses the lower five bits of the shift operand for 32-bit shift operations.
+
+## RTL Modules
+
+| Module | Function |
+|--------|----------|
+| `riscv_cpu.v` | Top-level datapath and module integration |
+| `program_counter.v` | Stores and updates the current program counter |
+| `instruction_memory.v` | Stores the program executed by the processor |
+| `control_unit.v` | Decodes instructions and generates control signals |
+| `register_file.v` | Implements 32 general-purpose 32-bit registers |
+| `immediate_generator.v` | Generates sign-extended instruction immediates |
+| `alu.v` | Performs arithmetic, logic, comparison, and shift operations |
+| `data_memory.v` | Implements load/store data memory |
+| `riscv_cpu_tb.v` | Integrated processor testbench |
+
+## Verification
+
+The integrated processor was simulated with a test program that exercises arithmetic, register writeback, memory operations, and conditional branching.
+
+### Test Program
+
+```assembly
+addi x1, x0, 5
+addi x2, x0, 3
+add  x3, x1, x2
+sw   x3, 0(x0)
+lw   x4, 0(x0)
+beq  x3, x4, +8
+addi x5, x0, 99    # skipped when branch is taken
+addi x5, x0, 42
+nop
+```
+
+### Observed Results
+
+The integrated simulation produced:
+
+```text
+x1 = 5
+x2 = 3
+x3 = 8
+x4 = 8
+x5 = 42
+Memory[0] = 8
+```
+
+This demonstrates the complete execution path:
+
+```text
+Immediate Arithmetic
+        ↓
+Register Writeback
+        ↓
+Register Arithmetic
+        ↓
+Memory Store
+        ↓
+Memory Load
+        ↓
+Conditional Branch
+        ↓
+Correct Branch Target Execution
+```
+
+### Simulation Result
+
+![RISC-V CPU simulation results](riscv_cpu_simulation_results.png)
+
+## FPGA Development
+
+The design was developed using:
+
+- Verilog HDL
+- Intel Quartus Prime Lite
+- Questa FPGA Starter Edition
+- Intel DE10-Lite FPGA platform
+
+Quartus is used for RTL synthesis and FPGA implementation, while Questa is used for functional simulation and verification.
+
+## Repository Structure
+
+```text
+riscv-pipelined-cpu/
+├── alu.v
+├── alu_tb.v
+├── control_unit.v
+├── control_unit_tb.v
+├── data_memory.v
+├── data_memory_tb.v
+├── immediate_generator.v
+├── immediate_generator_tb.v
+├── instruction_memory.v
+├── program_counter.v
+├── register_file.v
+├── register_file_tb.v
+├── riscv_cpu.v
+├── riscv_cpu_tb.v
+├── riscv_cpu.qpf
+├── riscv_cpu.qsf
+├── riscv_cpu.sdc
+├── riscv_cpu_simulation_results.png
+└── README.md
+```
+
+## Future Improvements
+
+Potential extensions include:
+
+- Full RV32I instruction support
+- JAL and JALR execution paths
+- Additional branch conditions
+- Pipeline implementation with IF/ID, ID/EX, EX/MEM, and MEM/WB registers
+- Data forwarding and hazard detection
+- Expanded automated verification
+- Performance and timing optimization
+
+## What I Learned
+
+This project provided hands-on experience with processor datapath design, instruction decoding, RTL modularization, register-file architecture, ALU design, memory interfaces, control-flow implementation, FPGA synthesis, and hardware verification.
+
+It also strengthened my understanding of how software-visible RISC-V instructions are translated into control signals and data movement through a hardware processor architecture.
