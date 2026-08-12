@@ -8,6 +8,10 @@ The processor was developed using Intel Quartus Prime and verified through modul
 
 The processor is organized as a modular single-cycle datapath:
 
+![32-bit RISC-V Single-Cycle Datapath Architecture](32-bit%20RISC-V%20Single-Cycle%20Datapath%20Diagram.png)
+
+The architecture diagram illustrates the integrated datapath and control paths across the program counter, instruction memory, control unit, register file, immediate generator, ALU, data memory, writeback path, and branch-control logic.
+
 ```text
               +--------------------+
               |  Program Counter   |
@@ -85,6 +89,8 @@ The current control logic implements the following instruction subset:
 
 The ALU implements signed comparison for SLT/SLTI and uses the lower five bits of the shift operand for 32-bit shift operations.
 
+While the immediate generator supports decoding of multiple RISC-V immediate formats, the table above represents the instruction subset currently implemented by the processor control and execution logic.
+
 ## RTL Modules
 
 | Module | Function |
@@ -150,7 +156,9 @@ Correct Branch Target Execution
 
 ### Simulation Result
 
-![RISC-V CPU simulation results](riscv_cpu_simulation_results.png)
+![RISC-V CPU Integrated Simulation Results](riscv_cpu_simulation_results.png)
+
+The integrated Questa simulation verifies correct execution of the processor test program across arithmetic operations, register writeback, memory access, and conditional branching.
 
 ## FPGA Synthesis Utilization Results
 
@@ -169,7 +177,7 @@ The processor was successfully synthesized and compiled for the Intel MAX 10 FPG
 
 The design completed full Quartus compilation successfully with **0 errors**.
 
-![Quartus FPGA synthesis utilization results](riscv_cpu_quartus_utilization.png)
+![RISC-V CPU Quartus FPGA Utilization](riscv_cpu_quartus_utilization.png)
 
 ## FPGA Development
 
@@ -203,6 +211,7 @@ riscv-cpu-verilog/
 ├── riscv_cpu.qpf
 ├── riscv_cpu.qsf
 ├── riscv_cpu.sdc
+├── 32-bit RISC-V Single-Cycle Datapath Diagram.png
 ├── riscv_cpu_simulation_results.png
 ├── riscv_cpu_quartus_utilization.png
 └── README.md
